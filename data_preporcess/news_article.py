@@ -59,6 +59,9 @@ def process_article(article_data, max_retries=3):
             article.parse()
             article.nlp()
             
+            # Get the publish date
+            publish_date = article.publish_date.strftime('%Y-%m-%d') if article.publish_date else 'Unknown'
+
             # Check article length (minimum 500 words)
             word_count = len(article.text.split())
             if word_count < 200:
@@ -83,7 +86,8 @@ def process_article(article_data, max_retries=3):
                 "sentiment": sentiment,
                 "url": url,
                 "topic": topic,
-                "word_count": word_count
+                "word_count": word_count,
+                "date": publish_date
             }
         except ArticleException as e:
             print(f"ArticleException processing {url}: {e}")
@@ -151,10 +155,9 @@ def main(api_key, num_articles=500):
 
 def save_to_csv(articles, folder_path, filename = "news_articles.csv"):
     print(f"Saving {len(articles)} articles to {folder_path}")
-    # make sure the folder exists
     os.makedirs(folder_path, exist_ok=True)
     with open(os.path.join(folder_path, filename), 'w', newline='', encoding='utf-8') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=["Index", "Topic", "Content", "Word_count", "Key_words"])
+        writer = csv.DictWriter(csvfile, fieldnames=["Index", "Topic", "Content", "Word_count", "Key_words", "Date"])
 
         writer.writeheader()
         for index, article in enumerate(articles, start=1):
@@ -163,7 +166,8 @@ def save_to_csv(articles, folder_path, filename = "news_articles.csv"):
                 'Topic': article['topic'],
                 'Content': article['text'],
                 'Word_count': article['word_count'],
-                'Key_words': ', '.join(article['keywords'])
+                'Key_words': ', '.join(article['keywords']),
+                'Date': article['date']
             })
 
     print(f"Articles saved to {filename}")

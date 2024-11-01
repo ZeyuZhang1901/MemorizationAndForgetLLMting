@@ -3,5 +3,4 @@ wandb/*
 apikeys.json
 __pycache__/
 logs/
-name_number_dpo_models/
-name_number_sft_models/
+models/*

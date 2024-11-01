@@ -114,9 +114,9 @@ class NameNumberSFTConfig:
     sft_model_name: str = "meta-llama/Meta-Llama-3-8B"
     # sft_model_name: str = "TinyLlama/TinyLlama_v1.1"
     sft_dataset_path: str = "./data/name_number_query/name_number_query.csv"
-    sft_output_dir: str = "./name_number_sft_models2"
+    sft_output_dir: str = "./models/name_number_sft_models"
     sft_model_cache_dir: str = "/home/ubuntu/.cache/huggingface/hub/"
-    eval_log_dir: str = "./logs/name_number_sft2"  # New field for evaluation logs
+    eval_log_dir: str = "./logs/name_number_sft"  # New field for evaluation logs
     
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -138,7 +138,7 @@ class NameNumberSFTConfig:
         gradient_accumulation_steps=4,
         gradient_checkpointing=False,
         max_grad_norm=0.3,
-        num_train_epochs=50,  # Increased for this task
+        num_train_epochs=100, 
         save_steps=100,
         learning_rate=2e-4,
         bf16=True,
@@ -153,7 +153,7 @@ class NameNumberSFTConfig:
         eval_steps=1,  # Evaluate every step (which is every epoch in this case)
     )
     
-    generate_max_length: int = 64  # Adjusted for shorter responses
+    generate_max_length: int = 128  # Adjusted for shorter responses
 
     # Prompt template for inference
     inference_prompt: str = "What is the number corresponding to the name {name}?"
