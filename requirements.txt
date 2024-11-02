@@ -2,8 +2,6 @@ huggingface==0.0.1
 huggingface-hub==0.26.1
 transformers==4.45.2
 tokenizers==0.20.1
-torch==2.3.0
-torchvision==0.18.0
 pandas==2.2.2
 numpy==2.1.2
 bitsandbytes==0.44.1
@@ -17,3 +15,4 @@ openai==1.52.2
 faker==30.8.1
 nltk==3.9.1
 newspaper3k==0.2.8
+matplotlib==3.9.2

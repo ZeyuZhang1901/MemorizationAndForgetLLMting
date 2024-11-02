@@ -62,7 +62,7 @@ def generate_questions(api_key, model_name, news_file, output_file):
         
         The answer should be concise and direct, better in one phrase or a short sentence.
         
-        Now please generate 20 question-answer pairs from the article in the format of "Question1: question_text\n\nAnswer1: answer_text\n\nQuestion2: question_text\n\nAnswer2: answer_text\n\n...Question10: question_text\n\nAnswer10: answer_text"
+        Now please generate 5 question-answer pairs from the article in the format of "Question1: question_text\n\nAnswer1: answer_text\n\nQuestion2: question_text\n\nAnswer2: answer_text\n\n...Question5: question_text\n\nAnswer5: answer_text"
         """
 
         response = client.chat.completions.create(
@@ -73,10 +73,10 @@ def generate_questions(api_key, model_name, news_file, output_file):
         qa_text = response.choices[0].message.content
         qa_pairs = []
         count = 0  # count the number of reasonable question-answer pairs for this news
-        for i in range(1, 21):
+        for i in range(1, 6):
             question_start = f"Question{i}:"
             answer_start = f"Answer{i}:"
-            next_question_start = f"Question{i+1}:" if i < 20 else None
+            next_question_start = f"Question{i+1}:" if i < 5 else None
 
             question_index = qa_text.find(question_start)
             answer_index = qa_text.find(answer_start)
@@ -95,7 +95,7 @@ def generate_questions(api_key, model_name, news_file, output_file):
                     qa_pairs.extend([question, answer])
                     count += 1
         print(f"Number of reasonable question-answer pairs: {count}")  # Add this line for debugging
-        print(f"Success rate for news {index}: {count / 20}")
+        print(f"Success rate for news {index}: {count / 5}")
 
         for i in range(0, len(qa_pairs), 2):
             question = qa_pairs[i]
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     with open('apikeys.json', 'r') as file:
         apikeys = json.load(file)
     api_key = apikeys["openai_api_key"]
-    model_name = "gpt-4o-mini"  # chatgpt-4o-mini
+    model_name = "gpt-4o"  # chatgpt-4o-mini
     news_file = "./data/news_articles/news_articles.csv"
     output_file = "./data/news_articles/evaluation_news_qa.csv"
     

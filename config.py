@@ -140,11 +140,11 @@ class NameNumberSFTConfig:
         max_grad_norm=0.3,
         num_train_epochs=100, 
         save_steps=100,
-        learning_rate=2e-4,
+        learning_rate=1e-4,
         bf16=True,
         save_total_limit=3,
         logging_steps=10,
-        output_dir='.models/name_number_sft_models',
+        output_dir='./models/name_number_sft_models',
         optim="paged_adamw_32bit",
         lr_scheduler_type="cosine",
         warmup_ratio=0.05,
@@ -153,10 +153,10 @@ class NameNumberSFTConfig:
         eval_steps=1,  # Evaluate every step (which is every epoch in this case)
     )
     
-    generate_max_length: int = 128  # Adjusted for shorter responses
+    generate_max_length: int = 512  # Adjusted for shorter responses
 
-    # Prompt template for inference
-    inference_prompt: str = "What is the number corresponding to the name {name}?"
+    # # Prompt template for inference
+    # inference_prompt: str = "What is the number corresponding to the name {name}?"
 
     # Evaluation settings
     eval_batch_size: int = 32
