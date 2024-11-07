@@ -3,7 +3,7 @@ import torch
 from transformers import BitsAndBytesConfig, TrainingArguments
 from peft import LoraConfig
 from trl import DPOConfig
-import json
+import json, os
 
 @dataclasses.dataclass
 class SFTConfig:
@@ -114,9 +114,9 @@ class NameNumberSFTConfig:
     sft_model_name: str = "meta-llama/Meta-Llama-3-8B"
     # sft_model_name: str = "TinyLlama/TinyLlama_v1.1"
     sft_dataset_path: str = "./data/name_number_query/name_number_query.csv"
-    sft_output_dir: str = "./models/name_number_sft_models"
+    sft_output_dir: str = "./models/name_number_sft"
     sft_model_cache_dir: str = "/home/ubuntu/.cache/huggingface/hub/"
-    eval_log_dir: str = "./logs/name_number_sft"  # New field for evaluation logs
+    sft_eval_log_dir: str = "./logs/name_number_sft"  # New field for evaluation logs
     
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -133,33 +133,32 @@ class NameNumberSFTConfig:
         task_type="CAUSAL_LM",
     )
         
+    # Training arguments
     training_args = TrainingArguments(
-        per_device_train_batch_size=8,
-        gradient_accumulation_steps=4,
+        per_device_train_batch_size=2,
+        gradient_accumulation_steps=2,
         gradient_checkpointing=False,
         max_grad_norm=0.3,
-        num_train_epochs=100, 
+        num_train_epochs=1,
         save_steps=100,
-        learning_rate=1e-4,
+        learning_rate=2e-4,
         bf16=True,
         save_total_limit=3,
         logging_steps=10,
-        output_dir='./models/name_number_sft_models',
+        output_dir='./models/name_number_sft',
         optim="paged_adamw_32bit",
         lr_scheduler_type="cosine",
         warmup_ratio=0.05,
-        remove_unused_columns=False,
-        evaluation_strategy="epoch",  # Evaluate after each epoch
-        eval_steps=1,  # Evaluate every step (which is every epoch in this case)
+        remove_unused_columns=False
     )
     
-    generate_max_length: int = 512  # Adjusted for shorter responses
-
-    # # Prompt template for inference
-    # inference_prompt: str = "What is the number corresponding to the name {name}?"
-
-    # Evaluation settings
-    eval_batch_size: int = 32
+    # Generation settings
+    generate_max_length: int = 64
+    
+    def __post_init__(self):
+        """Create necessary directories after initialization"""
+        os.makedirs(self.sft_model_cache_dir, exist_ok=True)
+        os.makedirs(self.sft_output_dir, exist_ok=True)
 
 @dataclasses.dataclass
 class NewsArticleSFTConfig:
