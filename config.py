@@ -165,17 +165,18 @@ class NewsArticleSFTConfig:
     """
     Config for supervised fine-tuning on news articles
     """
-
+    
     # Load API keys from JSON file
     with open('apikeys.json') as f:
         apikeys = json.load(f)
     
     hf_key: str = apikeys["hf_api_key"]
+    judge_api_key: str = apikeys["openai_api_key"]  # Added for evaluation
     sft_model_name: str = "meta-llama/Meta-Llama-3-8B"
     sft_dataset_path: str = "./data/news_articles/news_articles.csv"
-    sft_output_dir: str = "./models/news_article_sft_models"
-    sft_model_cache_dir: str = "/home/ubuntu/.cache/huggingface/hub/"
-    eval_log_dir: str = "./logs/news_article_sft"  # New field for evaluation logs
+    sft_output_dir: str = "./models/news_article_sft"
+    sft_model_cache_dir: str = "/home/ubuntu/Memorization-And-Forgetting/.cache/huggingface/hub/"
+    sft_eval_log_dir: str = "./logs/news_article_sft"
     
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -191,39 +192,40 @@ class NewsArticleSFTConfig:
         bias="none",
         task_type="CAUSAL_LM",
     )
-        
+    
+    num_epochs = 10  # Set desired number of epochs
+    
+    # Training arguments
     training_args = TrainingArguments(
+        output_dir="./models/news_article_sft",
         per_device_train_batch_size=2,
         gradient_accumulation_steps=4,
         gradient_checkpointing=True,
         max_grad_norm=0.3,
-        num_train_epochs=10,
-        save_steps=100,
         learning_rate=2e-4,
+        num_train_epochs=10,  # Specify number of epochs
         bf16=True,
         save_total_limit=3,
         logging_steps=10,
-        output_dir='./news_article_sft_models',
         optim="paged_adamw_32bit",
         lr_scheduler_type="cosine",
         warmup_ratio=0.05,
         remove_unused_columns=False,
-        evaluation_strategy="epoch",
-        eval_steps=1,
+        # Remove evaluation-related settings since we're handling it ourselves
     )
     
-    generate_max_length: int = 512  # Adjusted for longer news articles
-
-    # Prompt template for inference
-    inference_prompt: str = "Summarize the following news article:\n{article}\n\nSummary:"
-
-    # Evaluation settings
-    eval_batch_size: int = 4
-
-    # New fields for evaluation
-    judge_api_key: str = apikeys["openai_api_key"]
-    judge_model_name: str = "gpt-4-turbo"
+    # Generation settings
+    generate_max_length: int = 256
     
+    # Evaluation settings
+    chunk_size: int = 50  # Size of text chunks for training
+    eval_qa_path: str = "./data/news_articles/evaluation_news_qa.csv"
+    judge_model_name: str = "gpt-4"
+    
+    def __post_init__(self):
+        """Create necessary directories after initialization"""
+        os.makedirs(self.sft_model_cache_dir, exist_ok=True)
+        os.makedirs(self.sft_output_dir, exist_ok=True)
 
 @dataclasses.dataclass
 class NameNumberDPOConfig:
