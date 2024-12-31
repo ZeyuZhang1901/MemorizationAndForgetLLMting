@@ -171,7 +171,7 @@ class NewsArticleSFTConfig:
         apikeys = json.load(f)
     
     hf_key: str = apikeys["hf_api_key"]
-    judge_api_key: str = apikeys["openai_api_key"]  # Added for evaluation
+    judge_api_key: str = apikeys["openai_api_key"]
     sft_model_name: str = "meta-llama/Meta-Llama-3-8B"
     sft_dataset_path: str = "./data/news_articles/news_articles.csv"
     sft_output_dir: str = "./models/news_article_sft"
@@ -193,34 +193,37 @@ class NewsArticleSFTConfig:
         task_type="CAUSAL_LM",
     )
     
-    num_epochs = 10  # Set desired number of epochs
-    
     # Training arguments
     training_args = TrainingArguments(
         output_dir="./models/news_article_sft",
-        per_device_train_batch_size=2,
-        gradient_accumulation_steps=4,
+        per_device_train_batch_size=32,
+        gradient_accumulation_steps=8,
         gradient_checkpointing=True,
-        max_grad_norm=0.3,
-        learning_rate=2e-4,
-        num_train_epochs=10,  # Specify number of epochs
+        max_grad_norm=0.5,
+        learning_rate=2e-5,
+        num_train_epochs=100,
         bf16=True,
-        save_total_limit=3,
-        logging_steps=10,
+        logging_steps=50,
         optim="paged_adamw_32bit",
         lr_scheduler_type="cosine",
         warmup_ratio=0.05,
         remove_unused_columns=False,
-        # Remove evaluation-related settings since we're handling it ourselves
+        evaluation_strategy="epoch",
+        save_strategy="epoch",
+        save_steps=60,
+        save_total_limit=5
     )
     
     # Generation settings
     generate_max_length: int = 256
+    process_max_length: int = 256
+    padding_max_length: int = 256
+    use_sequence_packing: bool = False
     
     # Evaluation settings
-    chunk_size: int = 50  # Size of text chunks for training
+    chunk_size: int = 50  
     eval_qa_path: str = "./data/news_articles/evaluation_news_qa.csv"
-    judge_model_name: str = "gpt-4"
+    judge_model_name: str = "gpt-4o"
     
     def __post_init__(self):
         """Create necessary directories after initialization"""
@@ -284,20 +287,16 @@ class NewsArticleDPOConfig:
     with open('apikeys.json') as f:
         apikeys = json.load(f)
     
-    # API Keys
+    # API Keys and model paths
     hf_key: str = apikeys["hf_api_key"]
     judge_api_key: str = apikeys["openai_api_key"]
-    
-    # Model and paths
-    sft_model_name: str = "meta-llama/Meta-Llama-3-8B"  # Base model
-    dpo_dataset_path: str = "./data/news_articles/news_article_qa.csv"  # Dataset with accepted/rejected pairs
-    sft_adapter_path: str = "./models/news_article_sft_models"  # Path to SFT-trained adapter
-    dpo_output_dir: str = "./models/news_article_dpo_models"  # Where to save DPO-trained model
-    sft_model_cache_dir: str = "/home/ubuntu/.cache/huggingface/hub/"
-    eval_log_dir: str = "./logs/news_article_dpo"
-    
-    # Judge model settings
-    judge_model_name: str = "gpt-4"  # Model to use for evaluation
+    dpo_model_name: str = "meta-llama/Meta-Llama-3-8B"
+    dpo_dataset_path: str = "./data/news_articles/news_articles_dpo.csv"
+    sft_adapter_path: str = "./models/news_article_sft"
+    dpo_output_dir: str = "./models/news_article_dpo"
+    dpo_model_cache_dir: str = "/home/ubuntu/Memorization-And-Forgetting/.cache/huggingface/hub/"
+    dpo_eval_log_dir: str = "./logs/news_article_dpo"
+    dpo_eval_qa_path: str = "./data/news_articles/evaluation_news_qa.csv"
     
     # Model quantization config
     bnb_config = BitsAndBytesConfig(
@@ -306,34 +305,39 @@ class NewsArticleDPOConfig:
         bnb_4bit_compute_dtype=torch.bfloat16,
     )
     
+    peft_config = LoraConfig(
+        r=32,
+        lora_alpha=16,
+        target_modules=['q_proj', 'v_proj', 'k_proj'],
+        lora_dropout=0.05,
+        bias="none",
+        task_type="CAUSAL_LM",
+    )
+    
     # DPO Training arguments
     training_args = DPOConfig(
-        output_dir="./news_article_dpo_models",
-        num_train_epochs=3,
-        per_device_train_batch_size=4,
-        per_device_eval_batch_size=4,
-        gradient_accumulation_steps=2,
-        gradient_checkpointing=True,
-        learning_rate=5e-5,
-        logging_steps=10,
-        save_steps=100,
-        eval_steps=100,
-        warmup_ratio=0.1,
-        lr_scheduler_type="cosine",
+        output_dir="./models/news_article_dpo",
+        num_train_epochs=100,
+        per_device_train_batch_size=16,
+        gradient_accumulation_steps=4,
+        learning_rate=2e-4,
+        evaluation_strategy="epoch",
+        save_strategy="epoch",
+        logging_steps=50,
         bf16=True,
-        save_total_limit=3,
-        evaluation_strategy="steps",
-        beta=0.1,  # DPO specific parameter - temperature for the DPO loss
-        max_grad_norm=0.3,
+        beta=0.1,  # DPO specific parameter
     )
     
     # Generation settings
     generate_max_length: int = 256
-    num_beams: int = 4
-    temperature: float = 0.7
-    top_p: float = 0.9
-    top_k: int = 50
-    do_sample: bool = True
+    process_max_length: int = 256
+    padding_max_length: int = 256
+    use_sequence_packing: bool = False
     
-    # Evaluation settings
-    eval_batch_size: int = 32
+    eval_qa_path: str = "./data/news_articles/evaluation_news_qa.csv"
+    judge_model_name: str = "gpt-4o"
+    
+    def __post_init__(self):
+        """Create necessary directories after initialization"""
+        os.makedirs(self.dpo_model_cache_dir, exist_ok=True)
+        os.makedirs(self.dpo_output_dir, exist_ok=True)
