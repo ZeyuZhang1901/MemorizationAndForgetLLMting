@@ -2,3 +2,4 @@ model_responses/
 prompts/
 training_files/
 apikeys.json
+sft_experiments/sft_models/
